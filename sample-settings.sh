@@ -25,5 +25,5 @@ MD_CMD="cmark --to html --unsafe --smart --validate-utf8"
 # what you're doing.
 # Guaranteed to work: gawk (default in most systems)
 # Seems to work perfectly so far: mawk
-# Needs testing: nawk ("newline in string [...]" message, but output is still fine)
+# Doesn't work: nawk ("newline in string [...]" message)
 AWK_CMD="awk"
