@@ -1,0 +1,8 @@
+*
+!*/
+!.gitignore
+!COPYING
+!README.md
+!atom.awk
+!hecc
+!sample-settings.sh

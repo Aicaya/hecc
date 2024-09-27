@@ -1,0 +1,126 @@
+#!/bin/sh -
+# Very basic Atom feed generator
+
+# -----
+# Copyright (c) 2024 Aicaya Maro
+#
+# This program is free software.  It comes without any warranty, to the extent
+# permitted by applicable law.  You can redistribute it and/or modify it under
+# the terms of the Do What The Fuck You Want To Public License, Version 2, as
+# published by Sam Hocevar.  See the COPYING file for more details.
+# -----
+
+
+scriptdir="${0%/*}"
+. "$scriptdir"/settings.sh
+
+datadir="${scriptdir}/data"
+out="${scriptdir}/${FEED_LOC##*/}"
+
+feed_needs_updating=0
+
+# entry template minus the final '</content>' and '</entry>'
+# (those are in the awk script)
+entry_template='
+<entry>
+<title type="html">%%title%%</title>
+<id>%%id%%</id>
+<updated>%%date%%T00:00:00%%tz%%</updated>
+<content type="html">'
+
+# create posts directory and abort if it doesn't exist
+if [ ! -d "${scriptdir}/posts" ]; then
+    echo "Error: 'posts/' directory does not exist."
+    echo "Creating one now, so start writing something."
+    mkdir -p "${scriptdir}/posts"
+    exit 1
+fi
+
+# create folder for all the generated entries if it doesn't exist
+[ -d "$datadir" ] || mkdir -p "$datadir" || exit 1
+
+# delete previously-generated files without corresponding .md file
+# (i.e. deleted posts)
+for f in "$datadir"/*
+do
+    # if nothing is there, abort
+    [ -f "$f" ] || break
+
+    #corresponding .md file
+    m="${scriptdir}/posts/${f##*/}"
+    m="${m%.xml}.md"
+
+    if [ ! -f "$m" ]; then
+        rm "$f"
+        feed_needs_updating=1
+    fi
+done
+
+# returns list of files that need to be generated
+get_md_files() {
+    for f in "$scriptdir"/posts/*.md
+    do
+        # if nothing is there, break before we print anything
+        [ -f "$f" ] || break
+
+        # corresponding output file
+        g="$datadir/${f##*/}"
+        g="${g%.md}.xml"
+
+        # only print if output file doesn't exist or is older than .md file
+        # (i.e. .md file was edited recently)
+        # (note: posix as of 2024, will get false positive from shellcheck)
+        if [ ! -f "$g" ] || [ "$f" -nt "$g" ]; then
+            echo "$f"
+        fi
+    done
+}
+md_files=$(get_md_files)
+
+# generate individual xml files for each post
+if [ "$md_files" != "" ]; then
+    # shellcheck disable=SC2086
+    "$AWK_CMD" \
+        -v "template=$entry_template" \
+        -v "site=$WEBSITE"            \
+        -v "timezone=${TIMEZONE:-Z}"  \
+        -v "datadir=$datadir"         \
+        -v "markdown_cmd=$MD_CMD"     \
+        -f "$scriptdir/atom.awk"      \
+        $md_files
+
+    # if an error occurred with awk and nothing is in the folder, don't do
+    # anything
+    for f in "$datadir"/*
+    do
+        [ ! -f "$f" ] || feed_needs_updating=1
+        break
+    done
+fi
+
+if [ "$feed_needs_updating" -eq 0 ] && [ -f "$out" ]; then
+    echo "Nothing to do."
+    exit 0
+fi
+
+# get full list of generated files
+xml_files=$(find "$datadir" -name '*.xml' | sort -r)
+
+# grab date of last update from filename
+last_update=$(echo "$xml_files" | sed -n '1 s|^.*/\(.*\)\.xml|\1|p')
+
+# Actually generate the feed
+cat << EOF > "$out"
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="html">$FEED_TITLE</title>
+  <subtitle type="html">$FEED_SUBTITLE</subtitle>
+  <author><name>$FEED_AUTHOR</name></author>
+  <updated>${last_update}T00:00:00${TIMEZONE:-Z}</updated>
+  <link href="$WEBSITE" rel="alternate" />
+  <link href="${WEBSITE%/}${FEED_LOC}" rel="self" type="application/atom+xml" />
+  <id>${WEBSITE%/}${FEED_LOC}</id>
+EOF
+# shellcheck disable=SC2086
+cat $xml_files >> "$out"
+echo "</feed>" >> "$out"
