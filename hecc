@@ -89,14 +89,17 @@ if [ "$md_files" != "" ]; then
         -f "$scriptdir/atom.awk"      \
         $md_files
 
-    # if an error occurred with awk and nothing is in the folder, don't do
-    # anything
-    for f in "$datadir"/*
-    do
-        [ ! -f "$f" ] || feed_needs_updating=1
-        break
-    done
+    feed_needs_updating=1
 fi
+
+# if an error occurred with awk and nothing is in the folder, quit
+for f in "$datadir"/*
+do
+    if [ ! -f "$f" ]; then
+        echo "ERROR: No files generated at all."
+        exit 1
+    fi
+done
 
 if [ "$feed_needs_updating" -eq 0 ] && [ -f "$out" ]; then
     echo "Nothing to do."
