@@ -10,6 +10,24 @@
 # published by Sam Hocevar.  See the COPYING file for more details.
 # -----
 
+BEGIN {
+	# Import Atom feed template from external file.  This is the only
+	# portable way of doing this since nawk will throw an error if a
+	# variable is set with multiple lines from the main shell script.
+	a = "top"
+	while ((getline < "lib/template.xml") > 0) {
+		if ($1 ~ /%%contents%%/) {
+			atom[a] = atom[a] "\n"
+			a = "bottom"
+			continue
+		}
+		if (template[a] == "") { template[a] = $0 }
+		else                   { template[a] = template[a] "\n" $0 }
+	}
+	close("lib/template.xml")
+	a = ""
+}
+
 # get date from filename
 date == "" {
 	date = get_date(FILENAME)
@@ -40,7 +58,7 @@ FNR == 2 {
 
 {
 	out = datadir "/" date ".xml"
-	printf("%s\n", replace_labels(template)) > out
+	printf("%s\n", replace_labels(template["top"])) > out
 
 	if (title == date)
 		cmd = markdown_cmd " " FILENAME
@@ -51,8 +69,7 @@ FNR == 2 {
 		print clean_html($0) > out
 	close(cmd)
 
-	printf("%s\n", "</content>") > out
-	printf("%s\n", "</entry>") > out
+	printf("%s\n", template["bottom"]) > out
 	close(out)
 
 	reset()

@@ -23,7 +23,5 @@ MD_CMD="cmark --to html --unsafe --smart --validate-utf8"
 
 # Awk command to be used by script.  DEFINITELY do not modify unless you know
 # what you're doing.
-# Guaranteed to work: gawk (default in most systems)
-# Seems to work perfectly so far: mawk
-# Doesn't work: nawk ("newline in string [...]" message)
+# Implementations tested so far: gawk, nawk, mawk
 AWK_CMD="awk"
