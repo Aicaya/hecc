@@ -86,7 +86,7 @@ if [ "$md_files" != "" ]; then
         -v "timezone=${TIMEZONE:-Z}"  \
         -v "datadir=$datadir"         \
         -v "markdown_cmd=$MD_CMD"     \
-        -f "$scriptdir/atom.awk"      \
+        -f "$scriptdir/lib/atom.awk"  \
         $md_files
 
     feed_needs_updating=1
