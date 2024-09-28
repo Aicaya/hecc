@@ -80,7 +80,7 @@ md_files=$(get_md_files)
 # generate individual xml files for each post
 if [ "$md_files" != "" ]; then
     # shellcheck disable=SC2086
-    "$AWK_CMD" \
+    "${AWK_CMD:-awk}" \
         -v "template=$entry_template" \
         -v "site=$WEBSITE"            \
         -v "timezone=${TIMEZONE:-Z}"  \
