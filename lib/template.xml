@@ -2,7 +2,7 @@
 <title type="html">%%title%%</title>
 <id>%%id%%</id>
 <updated>%%date%%T00:00:00%%tz%%</updated>
-<content type="html">
+<content type="html" xml:base="%%website%%">
 %%contents%%
 </content>
 </entry>

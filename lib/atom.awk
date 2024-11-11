@@ -153,5 +153,6 @@ function replace_labels(t) {
 	sub(/%%id%%/, create_id(), t)
 	sub(/%%date%%/, date, t)
 	sub(/%%tz%%/, timezone, t)
+	sub(/%%website%%/, site, t)
 	return t
 }
